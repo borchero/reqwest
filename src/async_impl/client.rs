@@ -1009,6 +1009,29 @@ impl Client {
         self.execute_request(request)
     }
 
+    /// Executes the request built by attaching the given body to the given
+    /// HTTP builder.
+    ///
+    /// This is a low-level call to grant access to
+    ///
+    /// The request builder can be obtained by using the
+    /// `hyper::Request::builder()` method. The body can be any type that
+    /// can be converted into this crate's [Body](crate::Body) type.
+    ///
+    /// # Errors
+    ///
+    /// This method fails if building the HTTP request fails. Conduct the
+    /// [`body`](http::client::RequestBuilder::body) method documentation
+    /// for more information.
+    pub fn request_hyper(
+        &self,
+        builder: http::request::Builder,
+        body: impl Into<super::body::Body>,
+    ) -> Result<hyper::client::ResponseFuture, http::Error> {
+        let request = builder.body(body.into().into_stream())?;
+        return Ok(self.inner.hyper.request(request));
+    }
+
     pub(super) fn execute_request(&self, req: Request) -> Pending {
         let (method, url, mut headers, body, timeout) = req.pieces();
         if url.scheme() != "http" && url.scheme() != "https" {
